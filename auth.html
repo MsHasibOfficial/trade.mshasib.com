@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #1e1e2f;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #2c2c3e;
+            padding: 20px;
+            border-radius: 8px;
+            width: 350px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: #444;
+            color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4285f4;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #357ae8;
+        }
+
+        .toggle {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .toggle a {
+            color: #4285f4;
+            text-decoration: none;
+        }
+
+        .toggle a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <h1 id="form-title">Login</h1>
+        <form id="auth-form">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" id="submit-btn">Sign In</button>
+        </form>
+        <div class="toggle">
+            <span id="toggle-text">Don't have an account?</span>
+            <a href="#" id="toggle-link">Register</a>
+        </div>
+    </div>
+
+    <!-- Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-database.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.getAuth();
+        const db = firebase.getDatabase();
+
+        const container = document.getElementById('container');
+        const formTitle = document.getElementById('form-title');
+        const authForm = document.getElementById('auth-form');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleLink = document.getElementById('toggle-link');
+
+        let isLogin = true;
+
+        // Toggle between login and register
+        toggleLink.addEventListener('click', () => {
+            isLogin = !isLogin;
+            formTitle.textContent = isLogin ? 'Login' : 'Register';
+            submitBtn.textContent = isLogin ? 'Sign In' : 'Register';
+            toggleText.textContent = isLogin ? "Don't have an account?" : "Already have an account?";
+            toggleLink.textContent = isLogin ? 'Register' : 'Login';
+        });
+
+        // Handle form submission
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = emailField.value;
+            const password = passwordField.value;
+
+            if (isLogin) {
+                try {
+                    const userCredential = await firebase.signInWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+
+                    // Set session cookie (valid for 3 hours)
+                    document.cookie = `auth=${user.uid}; max-age=${3 * 60 * 60}; path=/`;
+                    alert('Login successful!');
+                } catch (error) {
+                    alert('Login failed: ' + error.message);
+                }
+            } else {
+                try {
+                    const userCredential = await firebase.createUserWithEmailAndPassword(auth, email, password);
+                    const user = userCredential.user;
+
+                    // Save user data in Realtime Database
+                    const userRef = firebase.ref(db, 'users/' + user.uid);
+                    await firebase.set(userRef, {
+                        email: user.email,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    alert('Registration successful!');
+                } catch (error) {
+                    alert('Registration failed: ' + error.message);
+                }
+            }
+
+            authForm.reset();
+        });
+    </script>
+</body>
+</html>
