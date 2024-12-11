@@ -180,7 +180,7 @@
 
         <div class="toggle">
             <span id="toggle-text">Don't have an account?</span>
-            <a href="#" id="toggle-link">Register</a>
+            <a href="?reg=true" id="toggle-link">Register</a>
         </div>
     </div>
 
@@ -212,17 +212,29 @@
         const toggleText = document.getElementById('toggle-text');
         const toggleLink = document.getElementById('toggle-link');
 
-        let isLogin = true;
+        // Check URL parameters for toggling
+        const urlParams = new URLSearchParams(window.location.search);
+        const isRegister = urlParams.get('reg') === 'true';
 
-        // Toggle between login and register
-        toggleLink.addEventListener('click', () => {
-            isLogin = !isLogin;
-            formTitle.textContent = isLogin ? 'Login' : 'Register';
-            loginForm.classList.toggle('hidden', !isLogin);
-            registerForm.classList.toggle('hidden', isLogin);
-            toggleText.textContent = isLogin ? "Don't have an account?" : "Already have an account?";
-            toggleLink.textContent = isLogin ? 'Register' : 'Login';
-        });
+        function updateFormState() {
+            if (isRegister) {
+                formTitle.textContent = 'Register';
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                toggleText.textContent = "Already have an account?";
+                toggleLink.textContent = 'Login';
+                toggleLink.href = '?reg=false';
+            } else {
+                formTitle.textContent = 'Login';
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                toggleText.textContent = "Don't have an account?";
+                toggleLink.textContent = 'Register';
+                toggleLink.href = '?reg=true';
+            }
+        }
+
+        updateFormState();
 
         // Handle login
         loginForm.addEventListener('submit', async (e) => {
