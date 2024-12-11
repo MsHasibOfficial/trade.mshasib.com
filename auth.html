@@ -213,9 +213,14 @@
         const toggleLink = document.getElementById('toggle-link');
 
         // Check URL parameters for toggling
-        const urlParams = new URLSearchParams(window.location.search);
-        const isRegister = urlParams.get('reg') === 'true';
+       function getURLParameter(name) {
+           const regex = new RegExp(`[?&]${name}=([^&#]*)`, 'i');
+           const match = window.location.href.match(regex);
+        return match ? decodeURIComponent(match[1]) : null;
+     }
 
+        const isRegister = getURLParameter('reg') === 'true';
+        
         function updateFormState() {
             if (isRegister) {
                 formTitle.textContent = 'Register';
