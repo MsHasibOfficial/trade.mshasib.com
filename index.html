@@ -3,212 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Tool</title>
+    <title>Image Analysis Tool</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
             background: linear-gradient(to bottom, #222, #555);
             color: white;
         }
-        header {
-            background-color: #333;
-            padding: 10px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .container {
+        .drop-area {
+            border: 2px dashed white;
+            border-radius: 10px;
             padding: 20px;
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+            background-color: #333;
         }
-        .selector {
-            margin-bottom: 20px;
+        .drop-area p {
+            margin: 10px 0;
         }
-        .market-selector {
-            padding: 10px;
-            border: none;
-            background-color: #444;
-            color: white;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        .live-market {
-            height: 300px;
-            background-color: #222;
-            margin-bottom: 20px;
-            border: 1px solid #444;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .buttons {
+            margin-top: 20px;
         }
         .button {
-            display: inline-block;
             padding: 10px 20px;
-            background-color: #555;
+            margin: 5px;
             border: none;
-            color: white;
-            cursor: pointer;
             border-radius: 5px;
+            cursor: pointer;
             font-size: 16px;
         }
-        .button:hover {
-            background-color: #666;
-        }
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            color: black;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            display: none;
-        }
-        .popup input {
-            margin-top: 10px;
-        }
-        .close-popup {
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .copy-btn {
-            margin-top: 10px;
+        .button.copy {
             background-color: green;
             color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
         }
-        footer {
-            background-color: #333;
+        .button.analyze {
+            background-color: blue;
             color: white;
+        }
+        .preview {
+            margin-top: 20px;
             text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border: 2px solid white;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <header>Trading Tool</header>
-    <div class="container">
-        <div class="selector">
-            <label for="market">Select Market:</label>
-            <select id="market" class="market-selector">
-                <option value="crypto">Crypto</option>
-                <option value="stocks">Stocks</option>
-                <option value="forex">Forex</option>
-            </select>
-        </div>
-        <div id="liveMarket" class="live-market">
-            Live Market Data Will Appear Here
-        </div>
-        <button class="button" id="analyzeButton">Analyze</button>
+    <div class="drop-area" id="dropArea">
+        <p>Drag & Drop an Image Here</p>
+        <p>or</p>
+        <p>Paste an Image from Clipboard</p>
     </div>
-
-    <div class="popup" id="popup">
-        <div id="popupContent">
-            <p>Choose Analysis Mode:</p>
-            <button id="liveAnalysis" class="button">Live</button>
-            <button id="uploadImage" class="button">Upload Image</button>
-            <button id="pasteImage" class="button">Paste Image</button>
-        </div>
-        <div id="analysisResult" style="display: none;">
-            <p><b>Result:</b> <span id="resultText">"Give me up or down with img here"</span></p>
-            <button class="copy-btn" id="copyButton">Copy</button>
-        </div>
-        <button class="close-popup" id="closePopup">Close</button>
+    <div class="buttons">
+        <button class="button analyze" id="analyzeButton">Give Percent</button>
+        <button class="button copy" id="copyButton">Copy Text & Image</button>
     </div>
-
-    <footer>
-        &copy; 2024 By Team MsH
-    </footer>
+    <div class="preview" id="previewArea">
+        <p id="percentText"></p>
+        <img id="previewImage" src="" alt="Preview" style="display:none;">
+    </div>
 
     <script>
-        async function fetchMarketData(market) {
-            try {
-                let apiUrl;
-                switch (market) {
-                    case 'crypto':
-                        apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd';
-                        break;
-                    case 'stocks':
-                        apiUrl = 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=5min&apikey=demo';
-                        break;
-                    case 'forex':
-                        apiUrl = 'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=EUR&to_currency=USD&apikey=demo';
-                        break;
+        const dropArea = document.getElementById('dropArea');
+        const analyzeButton = document.getElementById('analyzeButton');
+        const copyButton = document.getElementById('copyButton');
+        const previewImage = document.getElementById('previewImage');
+        const percentText = document.getElementById('percentText');
+
+        let currentImage = null;
+
+        // Drag and Drop Logic
+        dropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dropArea.style.backgroundColor = '#444';
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.backgroundColor = '#333';
+        });
+
+        dropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dropArea.style.backgroundColor = '#333';
+            const file = event.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        // Paste Logic
+        document.addEventListener('paste', (event) => {
+            const items = event.clipboardData.items;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    handleFile(file);
                 }
+            }
+        });
 
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-
-                let displayText = '';
-                switch (market) {
-                    case 'crypto':
-                        displayText = `Bitcoin: $${data.bitcoin.usd}, Ethereum: $${data.ethereum.usd}`;
-                        break;
-                    case 'stocks':
-                        displayText = `MSFT Latest Price: $${Object.values(data['Time Series (5min)'])[0]['1. open']}`;
-                        break;
-                    case 'forex':
-                        displayText = `EUR/USD Exchange Rate: ${data['Realtime Currency Exchange Rate']['5. Exchange Rate']}`;
-                        break;
-                }
-
-                document.getElementById('liveMarket').innerText = displayText;
-            } catch (error) {
-                document.getElementById('liveMarket').innerText = 'Error fetching market data.';
-                console.error(error);
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    currentImage = reader.result;
+                    previewImage.src = currentImage;
+                    previewImage.style.display = 'block';
+                    percentText.textContent = '';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please provide a valid image file.');
             }
         }
 
-        document.getElementById('market').addEventListener('change', () => {
-            const selectedMarket = document.getElementById('market').value;
-            fetchMarketData(selectedMarket);
+        // Analyze Button Logic
+        analyzeButton.addEventListener('click', () => {
+            if (currentImage) {
+                const randomPercent = Math.random() * 100;
+                percentText.textContent = `Prediction: ${randomPercent.toFixed(2)}%`;
+            } else {
+                alert('Please upload or paste an image first.');
+            }
         });
 
-        document.getElementById('analyzeButton').addEventListener('click', function () {
-            document.getElementById('popup').style.display = 'block';
-            document.getElementById('popupContent').style.display = 'block';
-            document.getElementById('analysisResult').style.display = 'none';
-        });
+        // Copy Button Logic
+        copyButton.addEventListener('click', async () => {
+            if (!currentImage) {
+                alert('No image or text to copy.');
+                return;
+            }
 
-        document.getElementById('closePopup').addEventListener('click', function () {
-            document.getElementById('popup').style.display = 'none';
-        });
+            try {
+                await navigator.clipboard.writeText(percentText.textContent);
 
-        document.getElementById('liveAnalysis').addEventListener('click', function () {
-            alert('Taking live photo is not supported yet!');
-        });
+                const blob = await fetch(currentImage).then((res) => res.blob());
+                const item = new ClipboardItem({ 'image/png': blob });
+                await navigator.clipboard.write([item]);
 
-        document.getElementById('uploadImage').addEventListener('click', function () {
-            alert('Image upload feature not implemented!');
+                alert('Text and image copied to clipboard!');
+            } catch (error) {
+                alert('Failed to copy text and image.');
+                console.error(error);
+            }
         });
-
-        document.getElementById('pasteImage').addEventListener('click', function () {
-            alert('Paste image feature not implemented!');
-        });
-
-        document.getElementById('copyButton').addEventListener('click', function () {
-            const resultText = document.getElementById('resultText').innerText;
-            navigator.clipboard.writeText(resultText).then(() => {
-                alert('Copied to clipboard!');
-            });
-        });
-
-        // Initial Data Load
-        fetchMarketData(document.getElementById('market').value);
     </script>
 </body>
 </html>
