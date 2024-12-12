@@ -69,7 +69,7 @@
         <p>Paste an Image from Clipboard</p>
     </div>
     <div class="buttons">
-        <button class="button analyze" id="analyzeButton">Give Me Up or Down Data</button>
+        <button class="button analyze" id="analyzeButton">Give Me Up and Down in JSON</button>
         <button class="button copy" id="copyButton">Copy Text & Image</button>
     </div>
     <div class="preview" id="previewArea">
@@ -132,8 +132,10 @@
         // Analyze Button Logic
         analyzeButton.addEventListener('click', () => {
             if (currentImage) {
-                const analysisResult = Math.random() > 0.5 ? 'Up' : 'Down';
-                analysisText.textContent = `Prediction: ${analysisResult}`;
+                const analysisResult = {
+                    prediction: Math.random() > 0.5 ? 'Up' : 'Down'
+                };
+                analysisText.textContent = `AI Prompt: ${JSON.stringify(analysisResult)}`;
             } else {
                 alert('Please upload or paste an image first.');
             }
@@ -147,11 +149,13 @@
             }
 
             try {
-                await navigator.clipboard.writeText(analysisText.textContent);
+                const textBlob = new Blob([analysisText.textContent], { type: 'text/plain' });
+                const textItem = new ClipboardItem({ 'text/plain': textBlob });
 
-                const blob = await fetch(currentImage).then((res) => res.blob());
-                const item = new ClipboardItem({ 'image/png': blob });
-                await navigator.clipboard.write([item]);
+                const imageBlob = await fetch(currentImage).then((res) => res.blob());
+                const imageItem = new ClipboardItem({ 'image/png': imageBlob });
+
+                await navigator.clipboard.write([textItem, imageItem]);
 
                 alert('Text and image copied to clipboard!');
             } catch (error) {
