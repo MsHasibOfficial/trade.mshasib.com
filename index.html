@@ -20,14 +20,15 @@
         .drop-area {
             border: 2px dashed white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 50px;
             text-align: center;
-            width: 80%;
-            max-width: 600px;
+            width: 90%;
+            max-width: 800px;
             background-color: #333;
         }
         .drop-area p {
             margin: 10px 0;
+            font-size: 18px;
         }
         .buttons {
             margin-top: 20px;
@@ -68,11 +69,11 @@
         <p>Paste an Image from Clipboard</p>
     </div>
     <div class="buttons">
-        <button class="button analyze" id="analyzeButton">Give Percent</button>
+        <button class="button analyze" id="analyzeButton">Give Me Up or Down Data</button>
         <button class="button copy" id="copyButton">Copy Text & Image</button>
     </div>
     <div class="preview" id="previewArea">
-        <p id="percentText"></p>
+        <p id="analysisText"></p>
         <img id="previewImage" src="" alt="Preview" style="display:none;">
     </div>
 
@@ -81,7 +82,7 @@
         const analyzeButton = document.getElementById('analyzeButton');
         const copyButton = document.getElementById('copyButton');
         const previewImage = document.getElementById('previewImage');
-        const percentText = document.getElementById('percentText');
+        const analysisText = document.getElementById('analysisText');
 
         let currentImage = null;
 
@@ -120,7 +121,7 @@
                     currentImage = reader.result;
                     previewImage.src = currentImage;
                     previewImage.style.display = 'block';
-                    percentText.textContent = '';
+                    analysisText.textContent = '';
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -131,8 +132,8 @@
         // Analyze Button Logic
         analyzeButton.addEventListener('click', () => {
             if (currentImage) {
-                const randomPercent = Math.random() * 100;
-                percentText.textContent = `Prediction: ${randomPercent.toFixed(2)}%`;
+                const analysisResult = Math.random() > 0.5 ? 'Up' : 'Down';
+                analysisText.textContent = `Prediction: ${analysisResult}`;
             } else {
                 alert('Please upload or paste an image first.');
             }
@@ -146,7 +147,7 @@
             }
 
             try {
-                await navigator.clipboard.writeText(percentText.textContent);
+                await navigator.clipboard.writeText(analysisText.textContent);
 
                 const blob = await fetch(currentImage).then((res) => res.blob());
                 const item = new ClipboardItem({ 'image/png': blob });
